@@ -1,0 +1,52 @@
+===== 506 SMP Simulator configuration =====
+L1_SIZE:           infinite
+L1_BLOCKSIZE:      64
+NUMBER OF PROCESSORS: 4
+COHERENCE PROTOCOL: MESI
+TRACE FILE:        canneal.04t.debug
+Total Execution time:                                     197768
+============ Simulation results (Cache 0) ============
+01. number of reads:                                       2339
+02. number of read misses:                                  642
+03. number of writes:                                       269
+04. number of write misses:                                  24
+05. number of write hits:                                   245
+06. number of read hits:                                   1697
+07. total miss rate:                                      25.54%
+08. number of memory accesses (exclude writebacks):         161
+09. number of invalidations:                                 33
+10. number of flushes:                                      940
+============ Simulation results (Cache 1) ============
+01. number of reads:                                       2341
+02. number of read misses:                                  626
+03. number of writes:                                       229
+04. number of write misses:                                  13
+05. number of write hits:                                   216
+06. number of read hits:                                   1715
+07. total miss rate:                                      24.86%
+08. number of memory accesses (exclude writebacks):         205
+09. number of invalidations:                                 34
+10. number of flushes:                                      677
+============ Simulation results (Cache 2) ============
+01. number of reads:                                       2396
+02. number of read misses:                                  614
+03. number of writes:                                       253
+04. number of write misses:                                  16
+05. number of write hits:                                   237
+06. number of read hits:                                   1782
+07. total miss rate:                                      23.78%
+08. number of memory accesses (exclude writebacks):         192
+09. number of invalidations:                                 34
+10. number of flushes:                                      593
+============ Simulation results (Cache 3) ============
+01. number of reads:                                       1969
+02. number of read misses:                                  669
+03. number of writes:                                       204
+04. number of write misses:                                  14
+05. number of write hits:                                   190
+06. number of read hits:                                   1300
+07. total miss rate:                                      31.43%
+08. number of memory accesses (exclude writebacks):         408
+09. number of invalidations:                                 31
+10. number of flushes:                                     1034
+
