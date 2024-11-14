@@ -97,25 +97,25 @@ int main(int argc, char *argv[]) {
             cache[input_processor]->MESI_Processor_Access(addr, rw, copy, cache, input_processor, num_processors);
           
              
-              ulong state = cache[input_processor]->findLine(addr)->getFlags();
-              std::cout << std::setw(10) << " " << rw  << ":" << std::hex << addr << "   :P" << (input_processor + 1) << "  ";
-              //ulong state = cache[input_processor]->findLine(addr)->getFlags();
-              cache[input_processor]->printCacheState(state);
-              for (int i = 0; i < num_processors; i++) {
-              if (i != input_processor) {
-              cacheLine* line = cache[i]->findLine(addr);
-              if (line) {  // If the line exists in the cache
-              std::cout << " :P" << (i + 1) << " ";
-              cache[i]->printCacheState(line->getFlags());}
-              else
-              {
-                std::cout << " :P" << (i + 1) << " ";
-                std::cout << "-";
-              }
+            // //   ulong state = cache[input_processor]->findLine(addr)->getFlags();
+            //   std::cout << std::setw(10) << " " << rw  << ":" << std::hex << addr << "   :P" << (input_processor + 1) << "  ";
+            //   //ulong state = cache[input_processor]->findLine(addr)->getFlags();
+            // //   cache[input_processor]->printCacheState(state);
+            //   for (int i = 0; i < num_processors; i++) {
+            //   if (i != input_processor) {
+            //   cacheLine* line = cache[i]->findLine(addr);
+            //   if (line) {  // If the line exists in the cache
+            //   std::cout << " :P" << (i + 1) << " ";
+            //   cache[i]->printCacheState(line->getFlags());}
+            //   else
+            //   {
+            //     std::cout << " :P" << (i + 1) << " ";
+            //     std::cout << "-";
+            //   }
             
-             }
-            }
-            std::cout<<std::endl;
+            //  }
+            // }
+            // std::cout<<std::endl;
             
            }
            

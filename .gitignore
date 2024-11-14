@@ -32,3 +32,5 @@
 *.app
 
 .vscode
+.swp
+smp_cache
