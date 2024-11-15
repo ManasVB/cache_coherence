@@ -27,10 +27,33 @@ cache = new cacheLine*[sets];
    
 }
 
+void Cache::ReadWriteStatus(ulong addr,uchar rw) {
+    if(rw == 'r') {
+        ++(this->reads);
+        if(this->findLine(addr) == NULL) {
+            ++(this->readMisses);
+            this->fillLine(addr);
+        } else {
+            ++(this->Readhits);
+            this->findLineToReplace(addr);
+        }
+    } else if(rw == 'w') {
+        ++(this->writes);
+        if(this->findLine(addr) == NULL) {
+            ++(this->writeMisses);
+            this->fillLine(addr);
+        }
+        else {
+            ++(this->Writehits);
+            this->findLineToReplace(addr);
+        }
+    } else {
+        exit(EXIT_FAILURE);
+    }
+}
 
-
-void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache, int processor, int num_processors )
-{
+void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache, int processor, int num_processors ) {
+    this->ReadWriteStatus(addr, rw);
 	
 }
 
@@ -39,8 +62,8 @@ void Cache::MESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrade
 
 }
 
-void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache, int processor, int num_processors )
- {
+void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache, int processor, int num_processors ) {
+    this->ReadWriteStatus(addr, rw);
 	
 
 }
