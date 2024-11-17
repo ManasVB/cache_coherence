@@ -101,9 +101,7 @@ public:
    void printCacheState(ulong state);
    void updateLRU(cacheLine *);
    void MOESI_Bus_Snoop(ulong addr,int busread,int busreadx, int busupgrade);
-   void MESI_Bus_Snoop(ulong addr,int busread,int busreadx,int busupgrade);
-   void ReadWriteStatus(ulong addr,uchar rw);
-  
+   void MESI_Bus_Snoop(ulong addr,int busread,int busreadx,int busupgrade);  
   
  
 
