@@ -129,7 +129,7 @@ void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache,
                 if(copy) {
                     for(u_int8_t i =0 ; i < num_processors; ++i) {
                         if(i != processor)
-                            cache[i]->MESI_Bus_Snoop(addr,1,0,0);
+                            cache[i]->MOESI_Bus_Snoop(addr,1,0,0);
                     }
                 } else {
                     ++mem_trans;
@@ -147,7 +147,7 @@ void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache,
             case INVALID: {
                 for(u_int8_t i =0 ; i < num_processors; ++i) {
                     if(i != processor)
-                        cache[i]->MESI_Bus_Snoop(addr,0,1,0);
+                        cache[i]->MOESI_Bus_Snoop(addr,0,1,0);
                 }
                 ++mem_trans;
             }
@@ -157,7 +157,7 @@ void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache,
             case Owner: {
                 for(u_int8_t i =0 ; i < num_processors; ++i) {
                     if(i != processor)
-                        cache[i]->MESI_Bus_Snoop(addr,0,0,1);
+                        cache[i]->MOESI_Bus_Snoop(addr,0,0,1);
                 }
             }
             break;
@@ -197,15 +197,19 @@ void Cache::MOESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrad
 
         case Exclusive: {
             // ++flushes;
-            if(busreadx)
+            if(busreadx) {
+                ++invalidations;
                 block->invalidate();
+            }
             else if(busread)
                 block->setFlags(Shared);
         } break;
 
         case Shared: {
-            if(busreadx || busupgrade)
+            if(busreadx || busupgrade) {
+                ++invalidations;
                 block->invalidate();
+            }
         } break;
 
         default: break;
