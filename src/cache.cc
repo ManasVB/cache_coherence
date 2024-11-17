@@ -28,24 +28,27 @@ cache = new cacheLine*[sets];
 }
 
 void Cache::ReadWriteStatus(ulong addr,uchar rw) {
+
+    cacheLine *block = this->findLine(addr);
+
     if(rw == 'r') {
         ++(this->reads);
-        if(this->findLine(addr) == NULL) {
+        if(block == NULL) {
             ++(this->readMisses);
             this->fillLine(addr);
         } else {
             ++(this->Readhits);
-            this->findLineToReplace(addr);
+            this->updateLRU(block);
         }
     } else if(rw == 'w') {
         ++(this->writes);
-        if(this->findLine(addr) == NULL) {
+        if(block == NULL) {
             ++(this->writeMisses);
             this->fillLine(addr);
         }
         else {
             ++(this->Writehits);
-            this->findLineToReplace(addr);
+            this->updateLRU(block);
         }
     } else {
         exit(EXIT_FAILURE);
@@ -53,17 +56,81 @@ void Cache::ReadWriteStatus(ulong addr,uchar rw) {
 }
 
 void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache, int processor, int num_processors ) {
-    this->ReadWriteStatus(addr, rw);
+
+    cacheLine *block = this->findLine(addr);
+    bool isMiss = false;
+
+    if(block == NULL) {
+        block = this->fillLine(addr);
+        isMiss = true;
+        assert(block->getFlags() == INVALID);
+    } 
+
+    if(rw == 'r') {
+        ++(this->reads);
+        (isMiss) ? ++(this->readMisses) : ++(this->Readhits);
+
+        switch(block->getFlags()) {
+            case INVALID: {
+                (!copy) ? block->setFlags(Exclusive) : block->setFlags(Shared);
+                if(copy) {
+                    for(u_int8_t i =0 ; i < num_processors; ++i) {
+                        if(i != processor)
+                            cache[i]->MESI_Bus_Snoop(addr,1,0,0);
+                    }
+                }
+            } break;
+
+            default: break;
+        }
+
+    } else if(rw == 'w') {
+        ++(this->writes);
+        (isMiss) ? ++(this->writeMisses) : ++(this->Writehits);
+
+        switch(block->getFlags()) {
+            case INVALID: {
+                block->setFlags(Modified);
+                for(u_int8_t i =0 ; i < num_processors; ++i) {
+                    if(i != processor)
+                        cache[i]->MESI_Bus_Snoop(addr,0,1,0);
+                }
+            }
+            break;
+
+            case Shared: {
+                block->setFlags(Modified);
+                for(u_int8_t i =0 ; i < num_processors; ++i) {
+                    if(i != processor)
+                        cache[i]->MESI_Bus_Snoop(addr,0,0,1);
+                }
+            }
+            break;
+
+            default: break;
+        }
+
+    } else {
+        exit(EXIT_FAILURE);
+    }
 	
 }
 
-void Cache::MESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrade )
-{
+void Cache::MESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrade ) {
+    cacheLine * block = this->findLine(addr);
 
+    if(block == NULL)
+        return;
+
+    if(busreadx || busupgrade)
+        block->invalidate();
+    
+    if(busread && (block->getFlags() != INVALID)) {
+        block->setFlags(Shared);
+    }
 }
 
 void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache, int processor, int num_processors ) {
-    this->ReadWriteStatus(addr, rw);
 	
 
 }
@@ -147,7 +214,7 @@ cacheLine *Cache::fillLine(ulong addr)
    {
 	   writeBack(addr);
    }
-   victim->setFlags(Shared);	
+   victim->setFlags(INVALID);	
    tag = calcTag(addr);   
    victim->setTag(tag);
        
