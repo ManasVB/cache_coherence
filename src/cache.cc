@@ -36,7 +36,7 @@ void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache,
         block = this->fillLine(addr);
         isMiss = true;
         assert(block->getFlags() == INVALID);
-    } 
+    }
 
     if(rw == 'r') {
         ++(this->reads);
@@ -68,8 +68,9 @@ void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache,
                     if(i != processor)
                         cache[i]->MESI_Bus_Snoop(addr,0,1,0);
                 }
-                ++mem_trans;
             }
+            if(!copy)
+                ++mem_trans;
             break;
 
             case Shared: {
@@ -94,6 +95,9 @@ void Cache::MESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrade
 
     if(block == NULL)
         return;
+
+    if(block->getFlags() == Modified && busreadx)
+        ++mem_trans;
 
     if(busreadx || busupgrade) {
         if(!busupgrade)
@@ -131,8 +135,6 @@ void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache,
                         if(i != processor)
                             cache[i]->MOESI_Bus_Snoop(addr,1,0,0);
                     }
-                } else {
-                    ++mem_trans;
                 }
             } break;
 
@@ -149,7 +151,7 @@ void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache,
                     if(i != processor)
                         cache[i]->MOESI_Bus_Snoop(addr,0,1,0);
                 }
-                ++mem_trans;
+                // ++mem_trans;
             }
             break;
 
@@ -196,7 +198,6 @@ void Cache::MOESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrad
         } break;
 
         case Exclusive: {
-            // ++flushes;
             if(busreadx) {
                 ++invalidations;
                 block->invalidate();
