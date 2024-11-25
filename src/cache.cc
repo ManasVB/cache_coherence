@@ -113,9 +113,6 @@ void Cache::MESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrade
     if(block == NULL)
         return;
 
-    if(block->getFlags() == Modified && busreadx)
-        ++mem_trans;
-
     if(busreadx || busupgrade) {
         if(!busupgrade)
             ++flushes;
@@ -225,8 +222,6 @@ void Cache::MOESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrad
             if(busreadx || busupgrade) {
                 if(!busupgrade) {
                     ++flushes;
-                    if(block->getFlags() == Owner)
-                        ++mem_trans;
                 }
                 ++invalidations;
                 block->invalidate();
