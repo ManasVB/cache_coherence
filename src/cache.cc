@@ -27,34 +27,6 @@ cache = new cacheLine*[sets];
    
 }
 
-void Cache::ReadWriteStatus(ulong addr,uchar rw) {
-
-    cacheLine *block = this->findLine(addr);
-
-    if(rw == 'r') {
-        ++(this->reads);
-        if(block == NULL) {
-            ++(this->readMisses);
-            this->fillLine(addr);
-        } else {
-            ++(this->Readhits);
-            this->updateLRU(block);
-        }
-    } else if(rw == 'w') {
-        ++(this->writes);
-        if(block == NULL) {
-            ++(this->writeMisses);
-            this->fillLine(addr);
-        }
-        else {
-            ++(this->Writehits);
-            this->updateLRU(block);
-        }
-    } else {
-        exit(EXIT_FAILURE);
-    }
-}
-
 void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache, int processor, int num_processors ) {
 
     cacheLine *block = this->findLine(addr);
@@ -64,11 +36,27 @@ void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache,
         block = this->fillLine(addr);
         isMiss = true;
         assert(block->getFlags() == INVALID);
-    } 
+    }
+
+    if(isMiss) {
+        if(copy)
+            Total_execution_time += flush_transfer;
+        else
+            Total_execution_time += memory_latency;
+    }
+    
+    if(!copy && !(block->isValid())) {
+        ++mem_trans;
+    }
 
     if(rw == 'r') {
         ++(this->reads);
-        (isMiss) ? ++(this->readMisses) : ++(this->Readhits);
+        if(isMiss)
+            ++(this->readMisses);
+        else {
+        ++(this->Readhits);
+        Total_execution_time += read_hit_latency;
+        }
 
         switch(block->getFlags()) {
             case INVALID: {
@@ -86,11 +74,15 @@ void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache,
 
     } else if(rw == 'w') {
         ++(this->writes);
-        (isMiss) ? ++(this->writeMisses) : ++(this->Writehits);
+        if(isMiss)
+            ++(this->writeMisses);
+        else {
+        ++(this->Writehits);
+        Total_execution_time += write_hit_latency;
+        }
 
         switch(block->getFlags()) {
             case INVALID: {
-                block->setFlags(Modified);
                 for(u_int8_t i =0 ; i < num_processors; ++i) {
                     if(i != processor)
                         cache[i]->MESI_Bus_Snoop(addr,0,1,0);
@@ -99,7 +91,6 @@ void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache,
             break;
 
             case Shared: {
-                block->setFlags(Modified);
                 for(u_int8_t i =0 ; i < num_processors; ++i) {
                     if(i != processor)
                         cache[i]->MESI_Bus_Snoop(addr,0,0,1);
@@ -109,7 +100,7 @@ void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache,
 
             default: break;
         }
-
+        block->setFlags(Modified);
     } else {
         exit(EXIT_FAILURE);
     }
@@ -122,22 +113,144 @@ void Cache::MESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrade
     if(block == NULL)
         return;
 
-    if(busreadx || busupgrade)
+    if(busreadx || busupgrade) {
+        if(!busupgrade)
+            ++flushes;
+        ++invalidations;
         block->invalidate();
+    }
     
     if(busread && (block->getFlags() != INVALID)) {
+        ++flushes;
         block->setFlags(Shared);
     }
 }
 
 void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache, int processor, int num_processors ) {
-	
+
+    cacheLine *block = this->findLine(addr);
+    bool isMiss = false;
+
+    if(block == NULL) {
+        block = this->fillLine(addr);
+        isMiss = true;
+        assert(block->getFlags() == INVALID);
+    }
+
+    if(isMiss) {
+        if(copy)
+            Total_execution_time += flush_transfer;
+        else
+            Total_execution_time += memory_latency;
+    }
+
+    if(!copy && !(block->isValid())) {
+        ++mem_trans;
+    }
+
+    if(rw == 'r') {
+        ++(this->reads);
+        if(isMiss)
+            ++(this->readMisses);
+        else {
+        ++(this->Readhits);
+        Total_execution_time += read_hit_latency;
+        }
+
+        switch(block->getFlags()) {
+            case INVALID: {
+                (!copy) ? block->setFlags(Exclusive) : block->setFlags(Shared);
+                if(copy) {
+                    for(u_int8_t i =0 ; i < num_processors; ++i) {
+                        if(i != processor)
+                            cache[i]->MOESI_Bus_Snoop(addr,1,0,0);
+                    }
+                }
+            } break;
+
+            default: break;
+        }
+
+    } else if(rw == 'w') {
+        ++(this->writes);
+        if(isMiss)
+            ++(this->writeMisses);
+        else {
+        ++(this->Writehits);
+        Total_execution_time += write_hit_latency;
+        }
+
+        switch(block->getFlags()) {
+            case INVALID: {
+                for(u_int8_t i =0 ; i < num_processors; ++i) {
+                    if(i != processor)
+                        cache[i]->MOESI_Bus_Snoop(addr,0,1,0);
+                }
+                // ++mem_trans;
+            }
+            break;
+
+            case Shared:
+            case Owner: {
+                for(u_int8_t i =0 ; i < num_processors; ++i) {
+                    if(i != processor)
+                        cache[i]->MOESI_Bus_Snoop(addr,0,0,1);
+                }
+            }
+            break;
+
+            default: break;
+        }
+        block->setFlags(Modified);
+    } else {
+        exit(EXIT_FAILURE);
+    }    
 
 }
 
-void Cache::MOESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrade )
-{
+void Cache::MOESI_Bus_Snoop(ulong addr , int busread,int busreadx, int busupgrade ) {
 	
+    cacheLine * block = this->findLine(addr);
+
+    if(block == NULL)
+        return;
+
+    switch(block->getFlags()) {
+        case Modified:
+        case Owner: {
+
+            if(busreadx || busupgrade) {
+                if(!busupgrade) {
+                    ++flushes;
+                }
+                ++invalidations;
+                block->invalidate();
+            }
+
+            if(busread) {
+                ++flushes;
+                block->setFlags(Owner);
+            }
+        } break;
+
+        case Exclusive: {
+            if(busreadx) {
+                ++invalidations;
+                block->invalidate();
+            }
+            else if(busread)
+                block->setFlags(Shared);
+        } break;
+
+        case Shared: {
+            if(busreadx || busupgrade) {
+                ++invalidations;
+                block->invalidate();
+            }
+        } break;
+
+        default: break;
+    }
 }
 
 /*look up line*/
