@@ -38,13 +38,25 @@ void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache,
         assert(block->getFlags() == INVALID);
     }
 
+    if(isMiss) {
+        if(copy)
+            Total_execution_time += flush_transfer;
+        else
+            Total_execution_time += memory_latency;
+    }
+    
     if(!copy && !(block->isValid())) {
         ++mem_trans;
     }
 
     if(rw == 'r') {
         ++(this->reads);
-        (isMiss) ? ++(this->readMisses) : ++(this->Readhits);
+        if(isMiss)
+            ++(this->readMisses);
+        else {
+        ++(this->Readhits);
+        Total_execution_time += read_hit_latency;
+        }
 
         switch(block->getFlags()) {
             case INVALID: {
@@ -62,7 +74,12 @@ void Cache::MESI_Processor_Access(ulong addr,uchar rw, int copy , Cache **cache,
 
     } else if(rw == 'w') {
         ++(this->writes);
-        (isMiss) ? ++(this->writeMisses) : ++(this->Writehits);
+        if(isMiss)
+            ++(this->writeMisses);
+        else {
+        ++(this->Writehits);
+        Total_execution_time += write_hit_latency;
+        }
 
         switch(block->getFlags()) {
             case INVALID: {
@@ -123,13 +140,25 @@ void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache,
         assert(block->getFlags() == INVALID);
     }
 
+    if(isMiss) {
+        if(copy)
+            Total_execution_time += flush_transfer;
+        else
+            Total_execution_time += memory_latency;
+    }
+
     if(!copy && !(block->isValid())) {
         ++mem_trans;
     }
 
     if(rw == 'r') {
         ++(this->reads);
-        (isMiss) ? ++(this->readMisses) : ++(this->Readhits);
+        if(isMiss)
+            ++(this->readMisses);
+        else {
+        ++(this->Readhits);
+        Total_execution_time += read_hit_latency;
+        }
 
         switch(block->getFlags()) {
             case INVALID: {
@@ -147,7 +176,12 @@ void Cache::MOESI_Processor_Access(ulong addr,uchar rw, int copy, Cache **cache,
 
     } else if(rw == 'w') {
         ++(this->writes);
-        (isMiss) ? ++(this->writeMisses) : ++(this->Writehits);
+        if(isMiss)
+            ++(this->writeMisses);
+        else {
+        ++(this->Writehits);
+        Total_execution_time += write_hit_latency;
+        }
 
         switch(block->getFlags()) {
             case INVALID: {
